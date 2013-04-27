@@ -86,6 +86,59 @@ describe('Tape', function() {
 			tape.play();
 			assert.equal(ct,2);
 		});
+
+		it('doesnt play sounds that are over', function() {
+			var log = newLog();
+			tape.add({
+				start: 0,
+				end: 4,
+				output: {
+					context: new AudioContext(log)
+				}
+			});
+
+			tape._position = 10;
+			tape.play();
+			assert.equal(log.messages.length,0);
+		});
+
+		it('starts sounds in the middle when appropriate', function() {
+			var log = newLog();
+			tape.add({
+				start: 0,
+				end: 4,
+				output: {
+					context: new AudioContext(log)
+				}
+			});
+
+			tape._position = 3;
+			tape.play();
+			assert.equal(log.messages.length,2);
+			assert.equal(log.messages[0].offset,3);
+		})
+
+	});
+
+	describe('Tape.stop', function() {
+		it('stops all queued sources', function(done) {
+			var log = newLog();
+			tape.add({
+				start: 0,
+				end: 40,
+				output: {
+					context: new AudioContext(log)
+				}
+			});
+
+			tape._position = 3;
+			tape.play();
+			setTimeout(function() {
+				tape.stop();
+				assert.equal(log.messages.length,3);
+				done();
+			},200);
+		});
 	});
 
 	describe('Tape.playSound', function() {
@@ -101,7 +154,9 @@ describe('Tape', function() {
 			tape.playChannel(tape.channels.default);
 			assert.equal(log.messages[0].verb,'start');
 		});
+
 	});
+
 
 	describe('Tape.playChannel', function() {
 		it('plays the notes in a channel', function() {
@@ -148,7 +203,7 @@ describe('Tape', function() {
 			tape.playChannel(tape.channels['1']);
 			assert.equal(log.messages[0].verb,'start');
 			assert.equal(log.messages[2].verb,'start');
-			assert.equal(log.messages[3].when,3)
+			assert.equal(log.messages[3].when - log.messages[2].when,3)
 		});
 	});
 

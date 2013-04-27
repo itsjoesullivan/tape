@@ -7,6 +7,8 @@ var Tape = module.exports = function(cf) {
 	this.channels = {
 		default: new EventChannel()
 	};
+	this.openEvents = [];
+	this.contextMinusPosition = 0;
 };
 
 /**
@@ -41,6 +43,15 @@ Tape.prototype.play = function() {
 	delete this.contextMinusPosition;
 };
 
+Tape.prototype.stop = function() {
+	this.openEvents.forEach(function(ev) {
+		if(ev.source.playbackState !== 3) {
+
+			ev.source.stop(ev.start > this.context.currentTime ? ev.start : 0);
+		}
+	});
+};
+
 /** Handle a channel of sound events
 
 */
@@ -71,6 +82,17 @@ Tape.prototype.playSound = function(soundEvent) {
 	//Create buffer source from the output's context
 	var source = output.context.createBufferSource(soundEvent.buffer);
 	source.connect(output);
-	source.start(soundEvent.start);
+	
+	if(soundEvent.end < this._position) {
+		return;
+	}
+
+	var absoluteStartTime = this.contextMinusPosition + soundEvent.start;
+
+	source.start(absoluteStartTime,this._position - soundEvent.start);
 	source.stop(soundEvent.end);
+	this.openEvents.push({
+		source: source,
+		start: absoluteStartTime
+	});
 };
