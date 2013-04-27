@@ -23,7 +23,7 @@ Tape addresses the particular problem of scheduling audio playback. In other wor
 	tape.add(audioEvent);
 
 	//Set tape position to zero
-	tape.position(0);
+	tape.position = 0;
 
 	//Initiate playback, in this case resulting in immediately playing sound _buffer_ through _output_ starting 1.5 seconds into the sound.
 	tape.play();

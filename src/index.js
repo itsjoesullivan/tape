@@ -2,7 +2,7 @@ var EventChannel = require('../lib/EventChannel');
 
 var Tape = module.exports = function(cf) {
 	//Where you are in the tape. read: NOT wrt the context
-	this._position = 0;
+	this.position = 0;
 	this.context = cf.context;
 	this.channels = {
 		default: new EventChannel()
@@ -35,7 +35,7 @@ Tape.prototype.add = function(soundEvent) {
 */
 Tape.prototype.play = function() {
 	this.contextTimeAtPlay = this.context.currentTime;
-	this.contextMinusPosition = this.contextTimeAtPlay - this._position;
+	this.contextMinusPosition = this.contextTimeAtPlay - this.position;
 	for(var name in this.channels) {
 		this.playChannel(this.channels[name]);
 	}
@@ -83,13 +83,13 @@ Tape.prototype.playSound = function(soundEvent) {
 	var source = output.context.createBufferSource(soundEvent.buffer);
 	source.connect(output);
 	
-	if(soundEvent.end < this._position) {
+	if(soundEvent.end < this.position) {
 		return;
 	}
 
 	var absoluteStartTime = this.contextMinusPosition + soundEvent.start;
 
-	source.start(absoluteStartTime,this._position - soundEvent.start);
+	source.start(absoluteStartTime,this.position - soundEvent.start);
 	source.stop(soundEvent.end);
 	this.openEvents.push({
 		source: source,

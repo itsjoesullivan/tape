@@ -97,7 +97,7 @@ describe('Tape', function() {
 				}
 			});
 
-			tape._position = 10;
+			tape.position = 10;
 			tape.play();
 			assert.equal(log.messages.length,0);
 		});
@@ -112,7 +112,7 @@ describe('Tape', function() {
 				}
 			});
 
-			tape._position = 3;
+			tape.position = 3;
 			tape.play();
 			assert.equal(log.messages.length,2);
 			assert.equal(log.messages[0].offset,3);
@@ -131,7 +131,7 @@ describe('Tape', function() {
 				}
 			});
 
-			tape._position = 3;
+			tape.position = 3;
 			tape.play();
 			setTimeout(function() {
 				tape.stop();
