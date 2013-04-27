@@ -1,0 +1,3 @@
+[submodule "lib/EventChannel"]
+	path = lib/EventChannel
+	url = https://github.com/itsjoesullivan/EventChannel.git
