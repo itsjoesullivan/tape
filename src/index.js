@@ -1,6 +1,16 @@
-var EventChannel = require('../lib/EventChannel');
 
-var Tape = module.exports = function(cf) {
+
+
+
+//var EventChannel = require('../lib/EventChannel');
+define([
+	'/lib/tape/lib/EventChannel/index.js',
+	'underscore',
+	'backbone'
+], function(EventChannel,_,Backbone) {
+
+var Tape = function(cf) {
+	_.extend(this,Backbone.Events);
 	//Where you are in the tape. read: NOT wrt the context
 	this.position = 0;
 	this.context = cf.context;
@@ -9,6 +19,9 @@ var Tape = module.exports = function(cf) {
 	};
 	this.openEvents = [];
 	this.contextMinusPosition = 0;
+
+	this.intervals = [];
+
 };
 
 /**
@@ -33,23 +46,50 @@ Tape.prototype.add = function(soundEvent) {
 /** Play all the sounds by dealing with each channel
 
 */
-Tape.prototype.play = function() {
+Tape.prototype.run = function() {
+	if(this.status === 'running') {
+		return;
+	}
+	
 	this.contextTimeAtPlay = this.context.currentTime;
 	this.contextMinusPosition = this.contextTimeAtPlay - this.position;
 	for(var name in this.channels) {
 		this.playChannel(this.channels[name]);
 	}
-	delete this.contextTimeAtPlay;
+	this.intervals.push(setInterval(function() {
+		this.trigger('time:seconds',Math.round(this.position + this.context.currentTime-this.contextTimeAtPlay));
+	}.bind(this),1000));
+
+	this.contextTimeAtPlay;
 	delete this.contextMinusPosition;
+	this.status = 'running';
+	this.trigger('run');
+	this.trigger('time:seconds',Math.round(this.position));
 };
 
 Tape.prototype.stop = function() {
+	if(this.status === 'stopped') {
+		this.position = 0;
+		this.trigger('time:seconds',0);
+		this.set('armed',false)
+		return;
+	}
+	this.position = this.position + this.context.currentTime - this.contextTimeAtPlay;
 	this.openEvents.forEach(function(ev) {
 		if(ev.source.playbackState !== 3) {
 
 			ev.source.stop(ev.start > this.context.currentTime ? ev.start : 0);
 		}
+	}.bind(this));
+	this.trigger('stop');
+	this.status = 'stopped';
+	delete this.contextTimeAtPlay;
+
+	this.intervals.forEach(function(interval) {
+		clearInterval(interval);
 	});
+	this.intervals = [];
+	this.trigger('time:seconds',Math.round(this.position));
 };
 
 /** Handle a channel of sound events
@@ -77,10 +117,13 @@ Tape.prototype.evaluateSoundEvent = function(soundEvent,channel) {
 
 Tape.prototype.playSound = function(soundEvent) {
 
-	var output = typeof soundEvent.output === 'function' ? soundEvent.output() : soundEvent.output
+	var output = (typeof soundEvent.output === 'function') 
+	  ? soundEvent.output() 
+	  : soundEvent.output;
 
 	//Create buffer source from the output's context
-	var source = output.context.createBufferSource(soundEvent.buffer);
+	var source = soundEvent.context().createBufferSource();
+	source.buffer = soundEvent.sound.buffer;
 	source.connect(output);
 	
 	if(soundEvent.end < this.position) {
@@ -88,11 +131,28 @@ Tape.prototype.playSound = function(soundEvent) {
 	}
 
 	var absoluteStartTime = this.contextMinusPosition + soundEvent.start;
+	var offset = this.position - soundEvent.start;
+	var duration = soundEvent.end - soundEvent.start;
 
-	source.start(absoluteStartTime,this.position - soundEvent.start);
-	source.stop(soundEvent.end);
+	source.start(absoluteStartTime, offset,duration);
+	//source.stop(soundEvent.end);
 	this.openEvents.push({
 		source: source,
 		start: absoluteStartTime
 	});
 };
+
+Tape.prototype.set = function(k,v) {
+	if(typeof k !== 'string') {
+		for(var key in k) {
+			this.set(key,k[key]);
+		}
+	}
+	this[k] = v;
+	this.trigger('change:' + k,this,v);
+}
+
+return Tape;
+
+})
+
