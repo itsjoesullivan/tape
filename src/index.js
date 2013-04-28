@@ -1,12 +1,3 @@
-var debug = true, log;
-
-if(debug) {
-	log = function() {
-		console.log.apply(console,arguments);
-	}
-} else {
-	log = function() {};
-}
 
 
 
@@ -107,7 +98,6 @@ Tape.prototype.stop = function() {
 Tape.prototype.playChannel = function(channel) {
 	channel.forEach(function(soundEvent) {
 		var durations = channel.getClearDurations(soundEvent);
-		console.log(durations);
 		durations.forEach(function(duration) {
 			for(var i in soundEvent) {
 				if(i === 'start' || i === 'end') continue;
@@ -141,9 +131,7 @@ Tape.prototype.playSound = function(soundEvent) {
 	}
 
 	var absoluteStartTime = this.contextMinusPosition + soundEvent.start;
-	console.log(this.context.currentTime,absoluteStartTime);
 	var offset = this.position - soundEvent.start;
-	console.log('offset:',offset);
 	var duration = soundEvent.end - soundEvent.start;
 
 	source.start(absoluteStartTime, offset,duration);
