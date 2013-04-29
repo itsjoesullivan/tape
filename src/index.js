@@ -56,11 +56,11 @@ Tape.prototype.run = function() {
 	for(var name in this.channels) {
 		this.playChannel(this.channels[name]);
 	}
+	if(this.context instanceof webkitOfflineAudioContext) return;
 	this.intervals.push(setInterval(function() {
 		this.trigger('time:seconds',Math.round(this.position + this.context.currentTime-this.contextTimeAtPlay));
 	}.bind(this),1000));
 
-	this.contextTimeAtPlay;
 	delete this.contextMinusPosition;
 	this.status = 'running';
 	this.trigger('run');
