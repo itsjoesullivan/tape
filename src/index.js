@@ -47,6 +47,7 @@ Tape.prototype.add = function(soundEvent) {
 
 */
 Tape.prototype.run = function() {
+	this.end = 0;
 	if(this.status === 'running') {
 		return;
 	}
@@ -135,6 +136,9 @@ Tape.prototype.playSound = function(soundEvent) {
 	var duration = soundEvent.end - soundEvent.start;
 
 	source.start(absoluteStartTime, offset,duration);
+	if(absoluteStartTime + duration > this.end) {
+		this.end = absoluteStartTime + duration - this.context.currentTime;
+	}
 	//source.stop(soundEvent.end);
 	this.openEvents.push({
 		source: source,
