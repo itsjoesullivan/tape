@@ -72,7 +72,7 @@ Tape.prototype.stop = function() {
 	if(this.status === 'stopped') {
 		this.position = 0;
 		this.trigger('time:seconds',0);
-		this.set('armed',false)
+		this.set('armed',false);
 		return;
 	}
 	this.position = this.position + this.context.currentTime - this.contextTimeAtPlay;
