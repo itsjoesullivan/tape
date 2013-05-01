@@ -118,6 +118,7 @@ Tape.prototype.evaluateSoundEvent = function(soundEvent,channel) {
 
 Tape.prototype.playSound = function(soundEvent) {
 
+
 	var output = (typeof soundEvent.output === 'function') 
 	  ? soundEvent.output() 
 	  : soundEvent.output;
