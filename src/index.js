@@ -46,7 +46,7 @@ Tape.prototype.add = function(soundEvent) {
 /** Play all the sounds by dealing with each channel
 
 */
-Tape.prototype.run = function() {
+Tape.prototype.run = function(filter) {
 	this.end = 0;
 	if(this.status === 'running') {
 		return;
@@ -54,9 +54,14 @@ Tape.prototype.run = function() {
 	
 	this.contextTimeAtPlay = this.context.currentTime;
 	this.contextMinusPosition = this.contextTimeAtPlay - this.position;
-	for(var name in this.channels) {
-		this.playChannel(this.channels[name]);
+	if(filter && typeof filter === 'object' && typeof filter.channel === 'string') {
+		this.playChannel(this.channels[filter.channel]);
+	} else {
+		for(var name in this.channels) {
+			this.playChannel(this.channels[name]);
+		}
 	}
+	
 	if(this.context instanceof webkitOfflineAudioContext) return;
 	this.intervals.push(setInterval(function() {
 		this.trigger('time:seconds',Math.round(this.position + this.context.currentTime-this.contextTimeAtPlay));
