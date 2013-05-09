@@ -35,6 +35,10 @@ var Tape = function(cf) {
 	}
 */
 Tape.prototype.add = function(soundEvent) {
+
+	if(!('end' in soundEvent)) {
+		soundEvent.end = function() { return soundEvent.start + soundEvent.sound.buffer.duration; }
+	}
 	
 	if('channel' in soundEvent &! (soundEvent.channel in this.channels))
 	  this.channels[soundEvent.channel] = new EventChannel();
@@ -103,6 +107,9 @@ Tape.prototype.stop = function() {
 */
 Tape.prototype.playChannel = function(channel) {
 	channel.forEach(function(soundEvent) {
+		if(typeof soundEvent.end === 'function') {
+			soundEvent.end = soundEvent.end();
+		}
 		var durations = channel.getClearDurations(soundEvent);
 		durations.forEach(function(duration) {
 			for(var i in soundEvent) {
@@ -128,10 +135,14 @@ Tape.prototype.playSound = function(soundEvent) {
 	  ? soundEvent.output() 
 	  : soundEvent.output;
 
+
+
 	//Create buffer source from the output's context
 	var source = soundEvent.context().createBufferSource();
 	source.buffer = soundEvent.sound.buffer;
 	source.connect(output);
+
+
 	
 	if(soundEvent.end < this.position) {
 		return;
