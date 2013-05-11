@@ -21,6 +21,7 @@ var Tape = function(cf) {
 	this.contextMinusPosition = 0;
 
 	this.intervals = [];
+	this.dryRun = false;
 
 };
 
@@ -72,7 +73,12 @@ Tape.prototype.run = function(filter) {
 	}.bind(this),1000));
 
 	delete this.contextMinusPosition;
+
 	this.status = 'running';
+
+	if(this.dryRun || this.context instanceof webkitOfflineAudioContext) return;
+
+	
 	this.trigger('run');
 	this.trigger('time:seconds',Math.round(this.position));
 };
@@ -106,6 +112,7 @@ Tape.prototype.stop = function() {
 
 */
 Tape.prototype.playChannel = function(channel) {
+	if(!(channel && 'forEach' in channel)) return;
 	channel.forEach(function(soundEvent) {
 		if(typeof soundEvent.end === 'function') {
 			soundEvent.end = soundEvent.end();
@@ -118,31 +125,25 @@ Tape.prototype.playChannel = function(channel) {
 			}
 			this.playSound(duration);
 		}.bind(this));
-		//var sounds = this.evaluateSoundEvent(soundEvent,channel).forEach(this.playSound);
 	}.bind(this));
 };
 
 Tape.prototype.evaluateSoundEvent = function(soundEvent,channel) {
 	var soundEvents = [];
-
 	return soundEvents;
 };
 
 Tape.prototype.playSound = function(soundEvent) {
 
-
+	//Get the output the setter, if it is one.
 	var output = (typeof soundEvent.output === 'function') 
 	  ? soundEvent.output() 
 	  : soundEvent.output;
-
-
 
 	//Create buffer source from the output's context
 	var source = soundEvent.context().createBufferSource();
 	source.buffer = soundEvent.sound.buffer;
 	source.connect(output);
-
-
 	
 	if(soundEvent.end < this.position) {
 		return;
@@ -152,11 +153,20 @@ Tape.prototype.playSound = function(soundEvent) {
 	var offset = this.position - soundEvent.start;
 	var duration = soundEvent.end - soundEvent.start;
 
-	source.start(absoluteStartTime, offset,duration);
 	if(absoluteStartTime + duration > this.end) {
 		this.end = absoluteStartTime + duration - this.context.currentTime;
 	}
-	//source.stop(soundEvent.end);
+
+	//Don't play if we're in dryRun mode--sometimes we just want to learn about what would be played.
+	if(this.dryRun) return;
+
+	//Schedule the sound.
+	source.start(absoluteStartTime, offset,duration);
+	
+	//No need to be ready to stop if offline.
+	if(this.context instanceof webkitOfflineAudioContext) return;
+
+	//Keep track of this sound so we know whether to kill it in the event of stopping.
 	this.openEvents.push({
 		source: source,
 		start: absoluteStartTime
